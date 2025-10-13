@@ -224,6 +224,10 @@
         const mainHeartButton = document.getElementById("main-heart-button");
         mainHeartButton.style.width = mainHeart.size + "px";
         mainHeartButton.style.height = mainHeart.size + "px";
+        mainHeartButton.style.webkitTapHighlightColor = "transparent";
+        mainHeartButton.style.webkitUserSelect = "none";
+        mainHeartButton.style.userSelect = "none";
+
         mainHeartButton.addEventListener("click", (e) => {
             let numberOfHearts = Math.floor(Math.random() * (MAX_CLICK_SPAWN - MIN_CLICK_SPAWN + 1)) + MIN_CLICK_SPAWN;
             for(let i = 1; i <= numberOfHearts; i++) setTimeout(() => {
