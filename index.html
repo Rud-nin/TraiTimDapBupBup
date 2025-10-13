@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trái Tim đập bụp bụp for you 🫵</title>
+</head>
+<body style="padding: 0; margin: 0; width: 100vw; height: 100vh; background-color: hsl(0, 0%, 10%); position: relative; overflow: hidden;">
+    <canvas id="canvas"></canvas>
+    <div id="main-heart-button" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer; border-radius: 50%;"></div>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", () => {
+            resizeCanvas();
+            mainHeart.x = window.innerWidth / 2;
+            mainHeart.y = window.innerHeight / 2;
+        });
+
+        // ------------------------- ULTILITIES --------------------------
+
+        function createHeart(x, y, size, color, dX, dY, opacity) {
+            return {
+                x: x,
+                y: y,
+                size: size,
+                color: color,
+                directionX: dX,
+                directionY: dY,
+                opacity: opacity,
+                birthTime: Date.now()
+            };
+        }
+
+        function generateRandomPink() {
+            const hue = 300 + Math.random() * 60;
+            const sat = 80 + Math.random() * 20;
+            const light = 40 + Math.random() * 30;
+            return `hsl(${hue}, ${sat}%, ${light}%)`;
+        }
+
+        // -------------------- VARIABLES AND CONFIGS --------------------
+
+        // MAIN HEART
+        var lastPumpTime = 0;
+        const MAIN_HEART_SIZE = 300;                    // px
+        const MAIN_HEART_COLOR = "hsl(330, 100%, 60%)";
+        const DELAY_BETWEEN_PUMPS = 3000;               // milisecond
+        const PUMPING_DURATION = 1000;                  // milisecond
+        const MAX_PUMP_SIZE = 50;                       // px : additional to original size
+        // EXPANDING HEARTS
+        const EXPANDING_HEART_SIZE = MAIN_HEART_SIZE;
+        const EXPANDING_DURATION = 1200;                // milisecond
+        const MAX_EXPANDING_SIZE = 200;                 // px : additional to original size
+        // MINI HEARTS
+        var nextSpawnTime = 0;
+        const MIN_DELAY_BETWEEN_SPAWN = 500;            // milisecond
+        const MAX_DELAY_BETWEEN_SPAWN = 1000;           // milisecond
+        const MIN_HEARTS_PER_SPAWN = 1;
+        const MAX_HEARTS_PER_SPAWN = 5;
+        const MINI_HEART_SIZE = 100;                    // px
+        const MIN_CLICK_SPAWN = 10;
+        const MAX_CLICK_SPAWN = 20;
+        const MINI_HEART_SPEED = 5;                     // px per update
+        const MINI_HEART_OPACITY_SPEED = 0.005;         // value per update
+
+
+        const mainHeart = createHeart(
+            window.innerWidth / 2,
+            window.innerHeight / 2,
+            MAIN_HEART_SIZE,
+            MAIN_HEART_COLOR,
+            0,
+            0,
+            1
+        );
+        var expandingHearts = [];
+        var miniHearts = [];
+
+        // ---------------------- MAIN FUNCTIONS --------------------------
+
+        function upadateHearts() {
+
+            function updateMiniHearts(){
+                miniHearts = miniHearts.filter((heart) => {
+                    heart.x += heart.directionX;
+                    heart.y += heart.directionY;
+                    if(heart.opacity < 1) heart.opacity = Math.min(1, heart.opacity + MINI_HEART_OPACITY_SPEED);
+                    return (
+                        heart.x >= -heart.size &&
+                        heart.x <= window.innerWidth + heart.size &&
+                        heart.y >= -heart.size &&
+                        heart.y <= window.innerHeight + heart.size
+                    );
+                });
+            }
+            updateMiniHearts();
+
+            function updateExpandingHearts() {
+                expandingHearts = expandingHearts.filter((heart) => {
+                    let duration_passed = Date.now() - heart.birthTime;
+                    heart.size = EXPANDING_HEART_SIZE + duration_passed / EXPANDING_DURATION * MAX_EXPANDING_SIZE;
+                    heart.opacity = Math.max(0, 1 - duration_passed / EXPANDING_DURATION);
+                    return duration_passed <= EXPANDING_DURATION;
+                });
+            }
+            updateExpandingHearts();
+
+            function updateMainHeart() {
+                let duration_passed = Date.now() - lastPumpTime;
+                if(duration_passed > DELAY_BETWEEN_PUMPS){
+                    // start pump
+                    lastPumpTime = Date.now();
+                    for(let i = 100; i <= 500; i += 100){
+                        window.setTimeout(() => {
+                            expandingHearts.push(createHeart(
+                                mainHeart.x,
+                                mainHeart.y,
+                                EXPANDING_HEART_SIZE,
+                                generateRandomPink(),
+                                0,
+                                0,
+                                1
+                            ));
+                        }, i);
+                    }
+                } else if(duration_passed <= PUMPING_DURATION){
+                    const HAFT_DURATION = PUMPING_DURATION / 2;
+                    if(duration_passed < HAFT_DURATION){
+                        // expanding
+                        mainHeart.size = MAIN_HEART_SIZE + MAX_PUMP_SIZE * (duration_passed / HAFT_DURATION);
+                    } else {
+                        // extracting
+                        mainHeart.size = MAIN_HEART_SIZE + MAX_PUMP_SIZE * ((PUMPING_DURATION - duration_passed) / HAFT_DURATION);
+                    }
+                } else mainHeart.size = MAIN_HEART_SIZE;
+            }
+            updateMainHeart();
+
+            function addMiniHeart(){
+                if(Date.now() > nextSpawnTime){
+                    nextSpawnTime = Date.now() + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_SPAWN - MIN_DELAY_BETWEEN_SPAWN + 1)) + MIN_DELAY_BETWEEN_SPAWN;
+                    let numberOfHearts = Math.floor(Math.random() * (MAX_HEARTS_PER_SPAWN - MIN_HEARTS_PER_SPAWN + 1)) + MIN_HEARTS_PER_SPAWN;
+                    for(let i = 1; i <= numberOfHearts; i++) setTimeout(() => {
+                        let angle = Math.random() * 2 * Math.PI;
+                        miniHearts.push(createHeart(
+                            mainHeart.x,
+                            mainHeart.y,
+                            MINI_HEART_SIZE,
+                            generateRandomPink(),
+                            Math.cos(angle),
+                            Math.sin(angle),
+                            0
+                        ), i*50);
+                    });
+                }
+            }
+            addMiniHeart();
+        }
+
+        function drawHearts(){
+
+            function drawHeart(heart) {
+                ctx.save();
+                ctx.globalAlpha = heart.opacity;
+                ctx.translate(heart.x, heart.y);
+
+                let workingSize = heart.size / 2;
+                let bezierLines = [
+                    {
+                        endPoint: [-workingSize, 0],
+                        firstCtrlPoint: [0, -2*workingSize/3],
+                        secondCtrlPoint: [-workingSize, -2*workingSize/3]
+                    },
+                    {
+                        endPoint: [0, workingSize],
+                        firstCtrlPoint: [-workingSize, 2*workingSize/3],
+                        secondCtrlPoint: [0, workingSize]
+                    },
+                    {
+                        endPoint: [workingSize, 0],
+                        firstCtrlPoint: [0, workingSize],
+                        secondCtrlPoint: [workingSize, 2*workingSize/3]
+                    },
+                    {
+                        endPoint: [0, 0],
+                        firstCtrlPoint: [workingSize, -2*workingSize/3],
+                        secondCtrlPoint: [0, -2*workingSize/3]
+                    }
+                ];
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for(line of bezierLines){
+                    ctx.bezierCurveTo(
+                        line.firstCtrlPoint[0], line.firstCtrlPoint[1],
+                        line.secondCtrlPoint[0], line.secondCtrlPoint[1],
+                        line.endPoint[0], line.endPoint[1]
+                    );
+                }
+                ctx.closePath();
+
+                const gradient = ctx.createRadialGradient(0, workingSize / 4, 0, 0, workingSize / 4, 5*workingSize/4); 
+                gradient.addColorStop(0, 'transparent');
+                gradient.addColorStop(0.6, heart.color);
+                gradient.addColorStop(1, heart.color);
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            for(heart of miniHearts) drawHeart(heart);
+            for(heart of expandingHearts) drawHeart(heart);
+            drawHeart(mainHeart);
+        }
+
+        const mainHeartButton = document.getElementById("main-heart-button");
+        mainHeartButton.style.width = mainHeart.size + "px";
+        mainHeartButton.style.height = mainHeart.size + "px";
+        mainHeartButton.addEventListener("click", (e) => {
+            let numberOfHearts = Math.floor(Math.random() * (MAX_CLICK_SPAWN - MIN_CLICK_SPAWN + 1)) + MIN_CLICK_SPAWN;
+            for(let i = 1; i <= numberOfHearts; i++) setTimeout(() => {
+                let angle = Math.random() * 2 * Math.PI;
+                miniHearts.push(createHeart(
+                    mainHeart.x,
+                    mainHeart.y,
+                    MINI_HEART_SIZE,
+                    generateRandomPink(),
+                    Math.cos(angle),
+                    Math.sin(angle),
+                    0
+                ), i*50);
+            });
+        });
+
+        function animation() {
+            ctx.fillStyle = 'hsl(0, 0%, 10%)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            upadateHearts();
+
+            drawHearts();
+
+            window.requestAnimationFrame(animation);
+        }
+
+        requestAnimationFrame(animation);
+
+    </script>
+</body>
+</html>
