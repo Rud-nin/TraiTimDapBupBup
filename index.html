@@ -7,7 +7,7 @@
 </head>
 <body style="padding: 0; margin: 0; width: 100vw; height: 100vh; background-color: hsl(0, 0%, 10%); position: relative; overflow: hidden;">
     <canvas id="canvas"></canvas>
-    <div id="main-heart-button" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer; border-radius: 50%;"></div>
+    <div id="main-heart-button" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; cursor: pointer;"></div>
     <script>
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
@@ -85,6 +85,36 @@
 
         // ---------------------- MAIN FUNCTIONS --------------------------
 
+        function spawnMiniHearts(numberOfHearts, x, y) {
+            for(let i = 1; i <= numberOfHearts; i++) window.setTimeout(() => {
+                let angle = Math.random() * 2 * Math.PI;
+                miniHearts.push(createHeart(
+                    x,
+                    y,
+                    MINI_HEART_SIZE,
+                    generateRandomPink(),
+                    Math.cos(angle),
+                    Math.sin(angle),
+                    0
+                ), i*50);
+            }, i*50);
+        }
+
+        function newPump() {
+            lastPumpTime = Date.now();
+            for(let i = 200; i <= 1000; i += 200) window.setTimeout(() => {
+                expandingHearts.push(createHeart(
+                    mainHeart.x,
+                    mainHeart.y,
+                    EXPANDING_HEART_SIZE,
+                    generateRandomPink(),
+                    0,
+                    0,
+                    1
+                ));
+            }, i);
+        }
+
         function upadateHearts() {
 
             function updateMiniHearts(){
@@ -116,20 +146,7 @@
                 let duration_passed = Date.now() - lastPumpTime;
                 if(duration_passed > DELAY_BETWEEN_PUMPS){
                     // start pump
-                    lastPumpTime = Date.now();
-                    for(let i = 100; i <= 500; i += 100){
-                        window.setTimeout(() => {
-                            expandingHearts.push(createHeart(
-                                mainHeart.x,
-                                mainHeart.y,
-                                EXPANDING_HEART_SIZE,
-                                generateRandomPink(),
-                                0,
-                                0,
-                                1
-                            ));
-                        }, i);
-                    }
+                    newPump();
                 } else if(duration_passed <= PUMPING_DURATION){
                     const HAFT_DURATION = PUMPING_DURATION / 2;
                     if(duration_passed < HAFT_DURATION){
@@ -147,18 +164,7 @@
                 if(Date.now() > nextSpawnTime){
                     nextSpawnTime = Date.now() + Math.floor(Math.random() * (MAX_DELAY_BETWEEN_SPAWN - MIN_DELAY_BETWEEN_SPAWN + 1)) + MIN_DELAY_BETWEEN_SPAWN;
                     let numberOfHearts = Math.floor(Math.random() * (MAX_HEARTS_PER_SPAWN - MIN_HEARTS_PER_SPAWN + 1)) + MIN_HEARTS_PER_SPAWN;
-                    for(let i = 1; i <= numberOfHearts; i++) setTimeout(() => {
-                        let angle = Math.random() * 2 * Math.PI;
-                        miniHearts.push(createHeart(
-                            mainHeart.x,
-                            mainHeart.y,
-                            MINI_HEART_SIZE,
-                            generateRandomPink(),
-                            Math.cos(angle),
-                            Math.sin(angle),
-                            0
-                        ), i*50);
-                    });
+                    spawnMiniHearts(numberOfHearts, mainHeart.x, mainHeart.y);
                 }
             }
             addMiniHeart();
@@ -222,26 +228,13 @@
         }
 
         const mainHeartButton = document.getElementById("main-heart-button");
-        mainHeartButton.style.width = mainHeart.size + "px";
-        mainHeartButton.style.height = mainHeart.size + "px";
         mainHeartButton.style.webkitTapHighlightColor = "transparent";
         mainHeartButton.style.webkitUserSelect = "none";
         mainHeartButton.style.userSelect = "none";
-
-        mainHeartButton.addEventListener("click", (e) => {
+        mainHeartButton.addEventListener("click", (event) => {
             let numberOfHearts = Math.floor(Math.random() * (MAX_CLICK_SPAWN - MIN_CLICK_SPAWN + 1)) + MIN_CLICK_SPAWN;
-            for(let i = 1; i <= numberOfHearts; i++) setTimeout(() => {
-                let angle = Math.random() * 2 * Math.PI;
-                miniHearts.push(createHeart(
-                    mainHeart.x,
-                    mainHeart.y,
-                    MINI_HEART_SIZE,
-                    generateRandomPink(),
-                    Math.cos(angle),
-                    Math.sin(angle),
-                    0
-                ), i*50);
-            });
+            newPump();
+            spawnMiniHearts(numberOfHearts, event.clientX, event.clientY);
         });
 
         function animation() {
