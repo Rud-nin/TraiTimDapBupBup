@@ -42,7 +42,15 @@
             const hue = 300 + Math.random() * 60;
             const sat = 80 + Math.random() * 20;
             const light = 40 + Math.random() * 30;
-            return `hsl(${hue}, ${sat}%, ${light}%)`;
+            return {
+                hue: hue,
+                sat: sat,
+                light: light
+            };
+        }
+
+        function getPink(pink) {
+            return `hsl(${pink.hue}, ${pink.sat}%, ${pink.light}%)`;
         }
 
         // -------------------- VARIABLES AND CONFIGS --------------------
@@ -50,7 +58,11 @@
         // MAIN HEART
         var lastPumpTime = 0;
         const MAIN_HEART_SIZE = 300;                    // px
-        const MAIN_HEART_COLOR = "hsl(330, 100%, 60%)";
+        const MAIN_HEART_COLOR = {
+            hue: 330,
+            sat: 100,
+            light: 60,
+        };
         const DELAY_BETWEEN_PUMPS = 3000;               // milisecond
         const PUMPING_DURATION = 1000;                  // milisecond
         const MAX_PUMP_SIZE = 50;                       // px : additional to original size
@@ -67,8 +79,11 @@
         const MINI_HEART_SIZE = 100;                    // px
         const MIN_CLICK_SPAWN = 10;
         const MAX_CLICK_SPAWN = 20;
-        const MINI_HEART_SPEED = 5;                     // px per update
-        const MINI_HEART_OPACITY_SPEED = 0.005;         // value per update
+        const MINI_HEART_SPEED = 3.5;                   // px per update
+        const MINI_HEART_BLINKING_DURATION = 1000;      // milisecond
+        const MINI_HEART_MAX_BIRTHTIME_OFFSET = 1000;   // milisecond
+        const MINI_HEART_MIN_OPACITY = 0.25;
+        const MINI_HEART_MAX_OPACITY = 0.75;
 
 
         const mainHeart = createHeart(
@@ -88,7 +103,7 @@
         function spawnMiniHearts(numberOfHearts, x, y) {
             for(let i = 1; i <= numberOfHearts; i++) window.setTimeout(() => {
                 let angle = Math.random() * 2 * Math.PI;
-                miniHearts.push(createHeart(
+                const miniHeart = createHeart(
                     x,
                     y,
                     MINI_HEART_SIZE,
@@ -96,7 +111,9 @@
                     Math.cos(angle),
                     Math.sin(angle),
                     0
-                ));
+                );
+                miniHeart.birthTime -= Math.floor(Math.random() * MINI_HEART_MAX_BIRTHTIME_OFFSET);
+                miniHearts.push(miniHeart);
             }, i*50);
         }
 
@@ -121,7 +138,12 @@
                 miniHearts = miniHearts.filter((heart) => {
                     heart.x += heart.directionX;
                     heart.y += heart.directionY;
-                    if(heart.opacity < 1) heart.opacity = Math.min(1, heart.opacity + MINI_HEART_OPACITY_SPEED);
+
+                    const duration_passed = Date.now() - heart.birthTime;
+                    const percentage = (duration_passed % MINI_HEART_BLINKING_DURATION) / MINI_HEART_BLINKING_DURATION;
+                    heart.opacity = (MINI_HEART_MAX_OPACITY + MINI_HEART_MIN_OPACITY)/2 + 
+                                    (MINI_HEART_MAX_OPACITY - MINI_HEART_MIN_OPACITY)/2 * Math.sin(percentage * 2 * Math.PI);
+
                     return (
                         heart.x >= -heart.size &&
                         heart.x <= window.innerWidth + heart.size &&
@@ -214,8 +236,8 @@
 
                 const gradient = ctx.createRadialGradient(0, workingSize / 4, 0, 0, workingSize / 4, 5*workingSize/4); 
                 gradient.addColorStop(0, 'transparent');
-                gradient.addColorStop(0.6, heart.color);
-                gradient.addColorStop(1, heart.color);
+                gradient.addColorStop(0.6, getPink(heart.color));
+                gradient.addColorStop(1, getPink(heart.color));
 
                 ctx.fillStyle = gradient;
                 ctx.fill();
