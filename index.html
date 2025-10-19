@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trái Tim đập bụp bụp for you 🫵</title>
+    <title>Trái Tim đập bụp bụp for Vivian 🫵</title>
 </head>
 <body style="padding: 0; margin: 0; width: 100vw; height: 100vh; background-color: hsl(0, 0%, 10%); position: relative; overflow: hidden;">
     <canvas id="canvas"></canvas>
@@ -140,7 +140,7 @@
                     heart.y += heart.directionY;
 
                     const duration_passed = Date.now() - heart.birthTime;
-                    const percentage = (duration_passed % MINI_HEART_BLINKING_DURATION) / MINI_HEART_BLINKING_DURATION;
+                    let percentage = (duration_passed % MINI_HEART_BLINKING_DURATION) / MINI_HEART_BLINKING_DURATION;
                     heart.opacity = (MINI_HEART_MAX_OPACITY + MINI_HEART_MIN_OPACITY)/2 + 
                                     (MINI_HEART_MAX_OPACITY - MINI_HEART_MIN_OPACITY)/2 * Math.sin(percentage * 2 * Math.PI);
 
